@@ -1,79 +1,205 @@
-from colorama import Fore, Style
+import tkinter as tk                    
+from tkinter import ttk                 
+from tkinter import messagebox            
+import sqlite3 as sql                  
+  
 
-def print_colored(text, color='white'):
-    colors = {
-        'black': Fore.BLACK,
-        'red': Fore.RED,
-        'green': Fore.GREEN,
-        'yellow': Fore.YELLOW,
-        'blue': Fore.BLUE,
-        'purple': Fore.MAGENTA,
-        'cyan': Fore.CYAN,
-        'white': Fore.WHITE,
-        'reset': Style.RESET_ALL
-    }
-    print(f'{colors[color]}{text}{colors["reset"]}')
+def add_task():  
+    
+    task_string = task_field.get()  
+    
+    if len(task_string) == 0:  
+          
+        messagebox.showinfo('Error', 'Field is Empty.')  
+    else:  
+        
+        tasks.append(task_string)  
+        
+        the_cursor.execute('insert into tasks values (?)', (task_string ,))  
+      
+        list_update()  
+        
+        task_field.delete(0, 'end')  
+  
 
-class ToDoList:
-    def __init__(self):
-        self.tasks = []
+def list_update():  
+    
+    clear_list()  
+   
+    for task in tasks:  
+       
+        task_listbox.insert('end', task)  
+  
+def delete_task():  
+    
+    try:  
+          
+        the_value = task_listbox.get(task_listbox.curselection())  
+        
+        if the_value in tasks:  
+            
+            tasks.remove(the_value)  
+            
+            list_update()  
+              
+            the_cursor.execute('delete from tasks where title = ?', (the_value,))  
+    except:  
+        
+        messagebox.showinfo('Error', 'No Task Selected. Cannot Delete.')        
+  
+  
+def delete_all_tasks():  
+    
+    message_box = messagebox.askyesno('Delete All', 'Are you sure?')  
+    
+    if message_box == True:  
+         
+        while(len(tasks) != 0):  
+         
+            tasks.pop()  
+          
+        the_cursor.execute('delete from tasks')  
+        
+        list_update()  
+  
 
-    def add_task(self, task):
-        self.tasks.append(task)
-        print_colored(f'Task "{task}" added successfully.', color='green')
+def clear_list():  
+     
+    task_listbox.delete(0, 'end')  
+  
+def close():  
+   
+    print(tasks)  
+     
+    guiWindow.destroy()  
+  
 
-    def delete_task(self, task):
-        if task in self.tasks:
-            self.tasks.remove(task)
-            print_colored(f'Task "{task}" deleted successfully.', color='red')
-        else:
-            print(f'Task "{task}" not found.', color='yellow')
+def retrieve_database():  
+     
+    while(len(tasks) != 0):  
+        
+        tasks.pop()  
+     
+    for row in the_cursor.execute('select title from tasks'):  
+         
+        tasks.append(row[0])  
+  
 
-    def view_tasks(self):
-        if self.tasks:
-            print_colored("Your To-Do List:", color='cyan')
-            for index, task in enumerate(self.tasks, start=1):
-                print(f"{index}. {task}")
-        else:
-            print("Your to-do list is empty.")
-    def print_colored(text, color='white'):
-        colors = {
-            'black': '\033[30m',
-            'red': '\033[31m',
-            'green': '\033[32m',
-            'yellow': '\033[33m',
-            'blue': '\033[34m',
-            'purple': '\033[35m',
-            'cyan': '\033[36m',
-            'white': '\033[37m',
-            'reset': '\033[0m'
-        }
-        print(f'{colors[color]}{text}{colors["reset"]}')
+if __name__ == "__main__":  
 
-def main():
-    to_do_list = ToDoList()
-
-    while True:
-        print("\n1. Add Task\n2. Delete Task\n3. View Tasks\n4. Exit")
-        choice = input("Enter your choice (1/2/3/4): ")
-
-        if choice == "1":
-            task = input("Enter the task: ")
-            to_do_list.add_task(task)
-
-        elif choice == "2":
-            task = input("Enter the task to delete: ")
-            to_do_list.delete_task(task)
-
-        elif choice == "3":
-            to_do_list.view_tasks()
-
-        elif choice == "4":
-            print("Exiting the To-Do List application. Goodbye!")
-            break
-
-        else:
-            print("Invalid choice. Please enter a valid option.")
-
-if __name__ == "__main__":
-    main()
+    guiWindow = tk.Tk()  
+    
+    guiWindow.title("Task_1_To-Do List")  
+      
+    guiWindow.geometry("500x450+750+250")  
+      
+    guiWindow.resizable(0, 0)  
+    
+    guiWindow.configure(bg = "#F2EDEB")  
+  
+     
+    the_connection = sql.connect('listOfTasks.db')  
+    
+    the_cursor = the_connection.cursor()  
+    
+    the_cursor.execute('create table if not exists tasks (title text)')  
+  
+    
+    tasks = []  
+      
+      
+    header_frame = tk.Frame(guiWindow, bg = "#F2EDEB")  
+    functions_frame = tk.Frame(guiWindow, bg = "#F2EDEB")  
+    listbox_frame = tk.Frame(guiWindow, bg = "#F2EDEB")  
+  
+    
+    header_frame.pack(fill = "both")  
+    functions_frame.pack(side = "left", expand = True, fill = "both")  
+    listbox_frame.pack(side = "right", expand = True, fill = "both")  
+      
+    
+    header_label = ttk.Label(  
+        header_frame,  
+        text = "To Do list",  
+        font = ("Helvetica", 18, "bold"),  
+        background = "#F2EDEB",  
+        foreground = "#333333"  
+    )  
+    
+    header_label.pack(padx = 20, pady = 20)  
+  
+    
+    task_label = ttk.Label(  
+        functions_frame,  
+        text = "Enter the Task:",  
+        font = ("Helvetica", 18, "bold"),  
+        background = "#F2EDEB",  
+        foreground = "#333333"  
+    )  
+    
+    task_label.place(x = 30, y = 40)  
+      
+    
+    task_field = ttk.Entry(  
+        functions_frame,  
+        font = ("Helvetica", 11, "bold"),  
+        width = 18,  
+        background = "#F2EDEB",  
+        foreground = "#333333"  
+    )  
+    
+    task_field.place(x = 30, y = 80)  
+  
+    
+    add_button = ttk.Button(  
+        functions_frame,  
+        text = "Add Task",  
+        width = 24,  
+        command = add_task  
+    )  
+    del_button = ttk.Button(  
+        functions_frame,  
+        text = "Delete Task",  
+        width = 24,  
+        command = delete_task  
+    )  
+    del_all_button = ttk.Button(  
+        functions_frame,  
+        text = "Delete All Tasks",  
+        width = 24,  
+        command = delete_all_tasks  
+    )  
+    exit_button = ttk.Button(  
+        functions_frame,  
+        text = "Exit",  
+        width = 24,  
+        command = close  
+    )  
+    
+    add_button.place(x = 30, y = 120)  
+    del_button.place(x = 30, y = 160)  
+    del_all_button.place(x = 30, y = 200)  
+    exit_button.place(x = 30, y = 240)  
+  
+    
+    task_listbox = tk.Listbox(  
+        listbox_frame,  
+        width = 26,  
+        height = 13,  
+        selectmode = 'SINGLE',  
+        background = "#FFFFFF",  
+        foreground = "#333333",  
+        selectbackground = "#CD853F",  
+        selectforeground = "#FFFFFF"  
+    )  
+    
+    task_listbox.place(x = 10, y = 20)  
+  
+   
+    retrieve_database()  
+    list_update()  
+    
+    guiWindow.mainloop()  
+    
+    the_connection.commit()  
+    the_cursor.close()  
